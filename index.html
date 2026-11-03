@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#5a3a22">
+<title>Caja Donde Topa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Libreta de mostrador: una columna, pestañas arriba, carga en tarjetas grandes para el pulgar */
+:root{
+  --bg:#f3ebdd; --surface:#fffaf1; --sunk:#e9dcc6; --line:#d8c6a8;
+  --ink:#3a2618; --muted:#7a6350; --accent:#b8862b; --accent-ink:#2b1a0e; --brown:#5a3a22;
+  --good:#3f7a3a; --bad:#b0412e; --good-bg:#e3eedb; --bad-bg:#f6dfd8;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Figtree",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:14px; color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#1c140e; --surface:#271c14; --sunk:#33251a; --line:#4a3726;
+  --ink:#f1e4cf; --muted:#b39b80; --accent:#d9a443; --accent-ink:#1c140e; --brown:#e3c9a2;
+  --good:#8cc47f; --bad:#ec8a74; --good-bg:#24331f; --bad-bg:#3a2119; color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 48px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--display);font-weight:800;font-size:1.9rem;letter-spacing:-.02em;margin:0;color:var(--brown);overflow-wrap:anywhere}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted);font-size:.85rem}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+nav button{font:600 .85rem var(--body);border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:10px 4px;border-radius:10px;cursor:pointer}
+nav button[aria-selected="true"]{background:var(--brown);color:var(--bg);border-color:var(--brown)}
+h2{font-family:var(--display);font-weight:600;font-size:1.15rem;margin:22px 0 10px;text-wrap:balance}
+.lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:600 .9rem var(--body);border:1.5px solid var(--line);background:var(--surface);color:var(--ink);padding:9px 14px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+.big .chip{flex:1;padding:12px;font-size:1rem}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.gustos{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:8px}
+.g{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:8px}
+.g.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.g b{font-weight:700;overflow-wrap:anywhere}
+.g .p{color:var(--muted);font-size:.85rem;font-variant-numeric:tabular-nums}
+.ctr{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.ctr button{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);font:700 1.25rem var(--body);cursor:pointer}
+.ctr .n{font:800 1.4rem var(--display);font-variant-numeric:tabular-nums;min-width:2ch;text-align:center}
+.ctr .cnt{flex:1;display:flex;flex-direction:column;align-items:center;line-height:1.15}
+.ctr .doc{font-size:.75rem;color:var(--muted);min-height:1em;text-align:center}
+.adds{display:grid;gap:6px}
+.adds button{font:700 .9rem var(--body);border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:10px 4px;cursor:pointer;line-height:1.1;min-width:0}
+.adds button small{display:block;font-weight:500;font-size:.7rem;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adds button:active{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+input{font:500 1rem var(--body);color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;width:100%;min-width:0}
+.money{font:800 1.6rem var(--display);font-variant-numeric:tabular-nums}
+.total{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.go{font:700 1.05rem var(--body);background:var(--brown);color:var(--bg);border:0;border-radius:12px;padding:15px;width:100%;cursor:pointer}
+.go:disabled{opacity:.4;cursor:not-allowed}
+.ghost{font:600 .85rem var(--body);background:none;border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:7px 11px;cursor:pointer}
+.danger{color:var(--bad);border-color:var(--bad)}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;min-width:0}
+.kpi .v{font:800 1.35rem var(--display);font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi.wide{grid-column:1/-1}
+.kpi.hero{grid-column:1/-1;background:var(--brown);border-color:var(--brown);color:var(--bg)}
+.kpi.hero .lbl{color:var(--bg);opacity:.75}
+.kpi.hero .v{font-size:2rem;color:var(--bg)}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+.meter{height:10px;background:var(--sunk);border-radius:6px;overflow:hidden;margin-top:8px}
+.meter i{display:block;height:100%;background:var(--good);border-radius:6px}
+.bars{display:flex;flex-direction:column;gap:9px}
+.bar{display:grid;grid-template-columns:minmax(0,7.5rem) 1fr auto;align-items:center;gap:10px;font-size:.9rem}
+.bar .t{height:12px;background:var(--sunk);border-radius:6px;overflow:hidden}
+.bar .t i{display:block;height:100%;background:var(--accent);border-radius:6px}
+.bar .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .q{font-variant-numeric:tabular-nums;color:var(--muted);text-align:right;min-width:5.5rem}
+.list{display:flex;flex-direction:column}
+.day{margin:16px 0 6px;display:flex;justify-content:space-between}
+.mv{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.tag{font:700 .68rem var(--body);text-transform:uppercase;letter-spacing:.06em;padding:4px 7px;border-radius:6px;min-width:4.6rem;text-align:center}
+.tag.venta{background:var(--good-bg);color:var(--good)}
+.tag.gasto{background:var(--bad-bg);color:var(--bad)}
+.tag.ajuste{background:var(--sunk);color:var(--brown)}
+.mv .d{font-size:.9rem;overflow-wrap:anywhere}
+.mv .m{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.mv .who{font-size:.75rem;color:var(--muted)}
+.confirm{display:flex;gap:6px;align-items:center;font-size:.85rem;flex-wrap:wrap;justify-content:flex-end}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th{text-align:left;font-weight:600;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;padding:6px 4px}
+td{padding:5px 4px;vertical-align:middle}
+td.num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.tbl{overflow-x:auto}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.note{background:var(--sunk);border-radius:var(--r);padding:14px;font-size:.92rem}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:12px;font-weight:600;z-index:20;max-width:calc(100% - 32px)}
+.empty{color:var(--muted);text-align:center;padding:26px 10px}
+.gate{min-height:70vh;display:flex;flex-direction:column;justify-content:center;gap:16px;max-width:420px;margin:0 auto}
+.gate p{margin:0}
+/* Configuración */
+details.sec{border-bottom:1px solid var(--line);padding-block:4px}
+details.sec>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;padding-block:12px}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary h2{margin:0}
+details.sec>summary::after{content:"+";font:700 1.3rem var(--body);color:var(--muted)}
+details.sec[open]>summary::after{content:"−"}
+details.sec>.body{padding-bottom:16px;display:flex;flex-direction:column;gap:10px}
+.gcfg{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:8px}
+.gcfg.off{opacity:.6}
+.gcfg .top{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center}
+.tri{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.tri label,.duo label{display:flex;flex-direction:column;gap:4px;font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;min-width:0}
+.tri input,.duo input{padding:9px;text-transform:none;letter-spacing:0}
+.sw{display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:600;white-space:nowrap;cursor:pointer}
+.sw input{width:20px;height:20px;accent-color:var(--accent);padding:0}
+.frow{display:grid;grid-template-columns:minmax(0,1fr) 6rem auto;gap:6px;align-items:center}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1.5px solid var(--line);border-radius:12px;cursor:pointer;background:var(--surface)}
+.opt input{width:20px;height:20px;margin-top:2px;accent-color:var(--accent);padding:0;flex:none}
+.opt:has(input:checked){border-color:var(--accent)}
+.opt b{display:block}
+.savebar{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:4;margin-top:16px;background:var(--bg);padding-block:8px;display:flex;flex-direction:column;gap:6px}
+@media (max-width:420px){.tri{grid-template-columns:1fr 1fr}.tri label:last-child{grid-column:1/-1}}
+@media (prefers-reduced-motion:no-preference){.bar .t i,.meter i{transition:width .35s ease}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="negocio">Donde <span>Topa</span></h1>
+    <div class="row"><span class="sub" id="status">Conectando…</span><button class="ghost" id="logout" hidden>Salir</button></div>
+  </header>
+
+  <!-- PANTALLA DE ACCESO -->
+  <section id="v-login" class="gate" hidden>
+    <h2 style="margin:0;font-size:1.5rem">Caja del grupo</h2>
+    <p class="sub" id="login-msg">Poné tu nombre y la contraseña del grupo para cargar ventas, gastos y ajustes.</p>
+    <form id="login-form" class="stack" autocomplete="on">
+      <input type="text" name="username" autocomplete="username" value="caja@donde-topa.app" hidden readonly>
+      <div><div class="lbl" style="margin-bottom:6px">Tu nombre</div>
+        <input id="login-nombre" autocomplete="nickname" placeholder="Ej: Sofi" required maxlength="30"></div>
+      <div><div class="lbl" style="margin-bottom:6px">Contraseña del grupo</div>
+        <input id="login-pass" type="password" autocomplete="current-password" required></div>
+      <button class="go" id="login-btn" type="submit">Entrar</button>
+    </form>
+  </section>
+
+  <div id="app" hidden>
+  <nav role="tablist">
+    <button role="tab" data-tab="cargar" aria-selected="true">Cargar</button>
+    <button role="tab" data-tab="resumen" aria-selected="false">Resumen</button>
+    <button role="tab" data-tab="movs" aria-selected="false">Movimientos</button>
+    <button role="tab" data-tab="config" aria-selected="false">Configuración</button>
+  </nav>
+
+  <!-- CARGAR -->
+  <section id="v-cargar">
+    <div class="seg big" id="modo">
+      <button class="chip" data-m="venta" aria-pressed="true">Venta</button>
+      <button class="chip" data-m="gasto" aria-pressed="false">Gasto</button>
+      <button class="chip" data-m="ajuste" aria-pressed="false">Ajuste</button>
+    </div>
+
+    <div id="f-venta" class="stack" style="margin-top:14px">
+      <div id="venta-gustos" class="gustos"></div>
+      <div>
+        <div class="lbl" style="margin-bottom:6px">Cómo pagó</div>
+        <div class="seg" id="medio"></div>
+      </div>
+      <input id="venta-nota" placeholder="Nota (opcional): a quién, pedido, etc." maxlength="300">
+      <div class="card total"><div><span class="lbl">Total</span><div class="sub" id="venta-uds"></div></div><div style="text-align:right"><span class="money" id="venta-total">$ 0</span><div class="sub" id="venta-gan"></div></div></div>
+      <button class="go" id="venta-ok" disabled>Guardar venta</button>
+    </div>
+
+    <div id="f-gasto" class="stack" style="margin-top:14px" hidden>
+      <div><div class="lbl" style="margin-bottom:6px">¿Cuánto?</div>
+        <input id="gasto-monto" inputmode="decimal" placeholder="$ 0" class="money" style="font-size:1.5rem"></div>
+      <div><div class="lbl" style="margin-bottom:6px">¿En qué?</div><div class="seg" id="gasto-cat"></div></div>
+      <input id="gasto-nota" placeholder="Detalle (opcional): 2 kg de carne, tapas…" maxlength="300">
+      <button class="go" id="gasto-ok" disabled>Guardar gasto</button>
+    </div>
+
+    <div id="f-ajuste" class="stack" style="margin-top:14px" hidden>
+      <div class="seg" id="aj-tipo">
+        <button class="chip" data-v="falto" aria-pressed="true">Faltó plata</button>
+        <button class="chip" data-v="sobro" aria-pressed="false">Sobró plata</button>
+        <button class="chip" data-v="merma" aria-pressed="false">Empanadas perdidas o regaladas</button>
+      </div>
+      <div id="aj-caja"><div class="lbl" style="margin-bottom:6px">Diferencia de caja</div>
+        <input id="aj-monto" inputmode="decimal" placeholder="$ 0" class="money" style="font-size:1.5rem"></div>
+      <div id="aj-merma" hidden><div id="merma-gustos" class="gustos"></div></div>
+      <input id="aj-nota" placeholder="Motivo: contamos la caja y…, se quemaron, degustación…" maxlength="300">
+      <button class="go" id="aj-ok" disabled>Guardar ajuste</button>
+    </div>
+
+    <h2>Lo último que se cargó</h2>
+    <div id="ultimos" class="list"></div>
+  </section>
+
+  <!-- RESUMEN -->
+  <section id="v-resumen" hidden>
+    <div class="seg" id="periodo" style="margin-bottom:12px">
+      <button class="chip" data-p="hoy" aria-pressed="false">Hoy</button>
+      <button class="chip" data-p="semana" aria-pressed="false">7 días</button>
+      <button class="chip" data-p="mes" aria-pressed="true">Este mes</button>
+      <button class="chip" data-p="todo" aria-pressed="false">Todo</button>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <h2>Empanadas vendidas por gusto</h2>
+    <div class="card"><div class="bars" id="bars-gustos"></div></div>
+    <h2>Cómo pagaron</h2>
+    <div class="card"><div class="bars" id="bars-medios"></div></div>
+    <h2>En qué se fue la plata</h2>
+    <div class="card"><div class="bars" id="bars-gastos"></div></div>
+    <h2>Cuánto deja cada docena</h2>
+    <div class="card tbl"><table id="margen"></table></div>
+  </section>
+
+  <!-- MOVIMIENTOS -->
+  <section id="v-movs" hidden>
+    <div class="row" style="justify-content:space-between;margin-bottom:6px">
+      <div class="seg" id="filtro">
+        <button class="chip" data-f="todo" aria-pressed="true">Todo</button>
+        <button class="chip" data-f="venta" aria-pressed="false">Ventas</button>
+        <button class="chip" data-f="gasto" aria-pressed="false">Gastos</button>
+        <button class="chip" data-f="ajuste" aria-pressed="false">Ajustes</button>
+      </div>
+      <button class="ghost" id="csv">Descargar para Excel</button>
+    </div>
+    <div id="movs" class="list"></div>
+  </section>
+
+  <!-- CONFIGURACIÓN -->
+  <section id="v-config" hidden>
+    <details class="sec" open>
+      <summary><h2>Gustos, precios y costos</h2></summary>
+      <div class="body">
+        <p class="sub" style="margin:0">Todo <b>por docena</b>. La media docena sale a la mitad. Si dejás vacío el precio suelta, la unidad sale a la docena ÷ 12. Destildá <b>En venta</b> para esconder un gusto sin borrarlo.</p>
+        <div id="cfg-gustos" class="stack" style="gap:8px"></div>
+        <div class="row"><button class="ghost" id="cfg-add">+ Agregar gusto</button>
+          <button class="ghost" id="cfg-tipicos" hidden>Cargar gustos típicos para editar</button></div>
+      </div>
+    </details>
+
+    <details class="sec">
+      <summary><h2>Botones para cargar cantidades</h2></summary>
+      <div class="body">
+        <p class="sub" style="margin:0">Los botones que aparecen en cada gusto al cargar una venta. Hasta 4. Ejemplo: Unidad 1, Media docena 6, Docena 12.</p>
+        <div id="cfg-formatos" class="stack" style="gap:6px"></div>
+        <button class="ghost" id="cfg-formato-add" style="align-self:flex-start">+ Agregar botón</button>
+      </div>
+    </details>
+
+    <details class="sec">
+      <summary><h2>Formas de pago</h2></summary>
+      <div class="body">
+        <p class="sub" style="margin:0">Las opciones de "Cómo pagó". La primera queda elegida por defecto. Tocá una para quitarla.</p>
+        <div class="seg" id="cfg-medios"></div>
+        <div class="row"><input id="cfg-medio-new" placeholder="Ej: Mercado Pago, Fiado" maxlength="30" style="flex:1;min-width:10rem"><button class="ghost" id="cfg-medio-add">Agregar</button></div>
+      </div>
+    </details>
+
+    <details class="sec">
+      <summary><h2>Categorías de gastos</h2></summary>
+      <div class="body">
+        <p class="sub" style="margin:0">Las opciones de "¿En qué?" al cargar un gasto. Tocá una para quitarla.</p>
+        <div class="seg" id="cfg-cats"></div>
+        <div class="row"><input id="cfg-cat-new" placeholder="Nueva categoría" maxlength="40" style="flex:1;min-width:10rem"><button class="ghost" id="cfg-cat-add">Agregar</button></div>
+      </div>
+    </details>
+
+    <details class="sec">
+      <summary><h2>Cómo se calcula la ganancia</h2></summary>
+      <div class="body" id="cfg-modo">
+        <label class="opt"><input type="radio" name="modo" value="costo"><span><b>Vendido − costo de las docenas</b><span class="sub">Usa el costo por docena de cada gusto. Ese costo ya se pagó para hacerlas, así que también se descuenta de la caja. No cargues las compras de ingredientes como gasto: se descontarían dos veces.</span></span></label>
+        <label class="opt"><input type="radio" name="modo" value="gastos"><span><b>Vendido − gastos cargados</b><span class="sub">No usa el costo por docena. Sirve si cargan cada compra de ingredientes como gasto. La caja descuenta solo los gastos.</span></span></label>
+        <label class="opt"><input type="radio" name="modo" value="ambos"><span><b>Vendido − costo de las docenas − gastos</b><span class="sub">Para cuando los gastos son cosas aparte del costo de la docena (publicidad, envíos, etc.). La caja descuenta las dos cosas.</span></span></label>
+      </div>
+    </details>
+
+    <details class="sec">
+      <summary><h2>Negocio, meta e inversión inicial</h2></summary>
+      <div class="body">
+        <div class="duo stack">
+          <label>Nombre del negocio<input id="cfg-negocio" maxlength="40" placeholder="Donde Topa"></label>
+          <label>Meta de ventas del mes (opcional)<input id="cfg-meta" inputmode="decimal" placeholder="$ 0 = sin meta"></label>
+          <label>Inversión inicial (la plata que pusieron para arrancar)<input id="cfg-caja" inputmode="decimal" placeholder="$ 0"></label>
+          <p class="sub" style="margin:0">Se resta de toda la ganancia para mostrar en Resumen cuánto ganaron de verdad y cuánto falta para recuperarla.</p>
+        </div>
+      </div>
+    </details>
+
+    <div class="savebar">
+      <button class="go" id="cfg-save">Guardar configuración</button>
+      <div class="sub" id="cfg-msg"></div>
+    </div>
+
+    <details class="sec">
+      <summary><h2>Cambiar la contraseña del grupo</h2></summary>
+      <div class="body">
+        <p class="sub" style="margin:0">Cambiala si alguien que no es del grupo la conoce. Después pasales la nueva a todos.</p>
+        <form id="pass-form" class="stack">
+          <input type="text" name="username" autocomplete="username" value="caja@donde-topa.app" hidden readonly>
+          <input id="pass-actual" type="password" autocomplete="current-password" placeholder="Contraseña actual" required>
+          <input id="pass-nueva" type="password" autocomplete="new-password" placeholder="Nueva (mínimo 8 caracteres)" minlength="8" required>
+          <input id="pass-repe" type="password" autocomplete="new-password" placeholder="Repetí la nueva" minlength="8" required>
+          <button class="ghost" type="submit">Cambiar contraseña</button>
+        </form>
+      </div>
+    </details>
+  </section>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBKPwkn5QUqfq1eOjgCnkM2MUJoiktylTQ",
+  authDomain: "caja-donde-topa.firebaseapp.com",
+  projectId: "caja-donde-topa",
+  storageBucket: "caja-donde-topa.firebasestorage.app",
+  messagingSenderId: "366935661022",
+  appId: "1:366935661022:web:4410c60f8ce252726d254f"
+};
+const CUENTA = "caja@donde-topa.app"; // cuenta compartida del grupo (la contraseña la valida Firebase)
+
+const fb = initializeApp(firebaseConfig);
+const auth = getAuth(fb);
+const fs = getFirestore(fb);
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const fmt = n => "$ " + Math.round(n||0).toLocaleString("es-AR");
+const num = v => { const n = parseFloat(String(v).replace(/\./g,"").replace(",",".").replace(/[^\d.-]/g,"")); return isFinite(n) ? n : 0; };
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ymd = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const uid = () => Math.random().toString(36).slice(2,9);
+const r2 = n => Math.round(n*100)/100;
+
+// ---------- configuración por defecto ----------
+const DEF = {
+  negocio: "Donde Topa",
+  gustos: [],
+  formatos: [{nombre:"Unidad",cant:1},{nombre:"Media docena",cant:6},{nombre:"Docena",cant:12}],
+  medios: ["Efectivo","Transferencia"],
+  cats: ["Ingredientes","Envases","Gas y luz","Otros"],
+  modoGanancia: "costo",
+  meta: 0,
+  cajaInicial: 0
+};
+const clone = o => JSON.parse(JSON.stringify(o));
+function normalizar(d){
+  const c = clone(DEF);
+  if(!d) return c;
+  for(const k of Object.keys(DEF)) if(d[k]!==undefined && d[k]!==null) c[k] = clone(d[k]);
+  if(!c.formatos.length) c.formatos = clone(DEF.formatos);
+  if(!c.medios.length) c.medios = clone(DEF.medios);
+  c.gustos = c.gustos.map(g=>({...g, activo: g.activo!==false}));
+  return c;
+}
+const getNegocioCache = () => { try { return localStorage.getItem("dt-negocio") || DEF.negocio; } catch { return DEF.negocio; } };
+
+let me = null, loaded = false;
+let config = normalizar(null);
+let movs = [];
+let state = {tab:"cargar", modo:"venta", medio:null, cant:{}, merma:{}, cat:null, aj:"falto", periodo:"mes", filtro:"todo", del:null};
+let draft = null, unsubs = [];
+
+function toast(t){ const el=$("#toast"); el.textContent=t; el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true,2800); }
+const setStatus = t => $("#status").textContent = t;
+function pintarNegocio(n){
+  const name = (n||DEF.negocio).trim(), i = name.lastIndexOf(" ");
+  $("#negocio").innerHTML = i>0 ? `${esc(name.slice(0,i))} <span>${esc(name.slice(i+1))}</span>` : `<span>${esc(name)}</span>`;
+  document.title = "Caja " + name;
+}
+pintarNegocio(getNegocioCache());
+
+// ---------- precios ----------
+const precioDocDe = g => +g.precioDoc || (+g.precio||0)*12;
+const costoDocDe  = g => +g.costoDoc  || (+g.costo||0)*12;
+const sueltaDe    = g => +g.precioSuelta || precioDocDe(g)/12;
+// Precio de n empanadas de un gusto: docenas a precio docena, media docena a la mitad, el resto a precio suelta
+function precioLinea(g, n){
+  const P = precioDocDe(g), d = Math.floor(n/12), r = n%12, m = r>=6 ? 1 : 0, s = r%6;
+  return Math.round(d*P + m*P/2 + s*sueltaDe(g));
+}
+const costoLinea = (g, n) => Math.round(n*costoDocDe(g)/12);
+const lineVenta = i => i.subtotal ?? Math.round(i.cant*(+i.precio||0));
+const lineCosto = i => i.costoSub ?? Math.round(i.cant*(+i.costo||0));
+const gustosActivos = () => config.gustos.filter(g=>g.activo!==false);
+
+function enDocenas(n){
+  if(n<6) return "";
+  const d=Math.floor(n/12), r=n%12, media=r>=6, sueltas=r%6;
+  let t = d ? (d===1 ? "1 docena" : d+" docenas") : "";
+  if(media) t = d ? t+" y media" : "media docena";
+  if(sueltas) t += " + "+sueltas;
+  return t;
+}
+
+// ---------- login ----------
+const getNombre = () => { try { return localStorage.getItem("dt-nombre") || ""; } catch { return ""; } };
+const setNombre = n => { try { localStorage.setItem("dt-nombre", n); } catch {} };
+$("#login-nombre").value = getNombre();
+const ERR_LOGIN = {
+  "auth/invalid-credential":"Contraseña incorrecta.", "auth/wrong-password":"Contraseña incorrecta.",
+  "auth/too-many-requests":"Demasiados intentos fallidos. Esperá unos minutos y probá de nuevo.",
+  "auth/network-request-failed":"Sin conexión. Revisá internet y probá de nuevo.",
+  "auth/user-not-found":"La cuenta del grupo todavía no está creada en Firebase.",
+  "auth/user-disabled":"El acceso está desactivado. Hablá con Santi."
+};
+$("#login-form").onsubmit = async e => {
+  e.preventDefault();
+  const nombre = $("#login-nombre").value.trim(), pass = $("#login-pass").value;
+  if(!nombre || !pass) return;
+  setNombre(nombre); $("#login-btn").disabled = true; $("#login-btn").textContent = "Entrando…";
+  try { await signInWithEmailAndPassword(auth, CUENTA, pass); $("#login-pass").value=""; }
+  catch(err){ toast(ERR_LOGIN[err.code] || "No se pudo entrar ("+err.code+")."); }
+  finally { $("#login-btn").disabled = false; $("#login-btn").textContent = "Entrar"; }
+};
+$("#logout").onclick = () => signOut(auth);
+
+onAuthStateChanged(auth, u => {
+  unsubs.forEach(f=>f()); unsubs=[]; loaded=false; movs=[];
+  if(!u || !getNombre()){ if(u) signOut(auth); me=null; $("#app").hidden=true; $("#v-login").hidden=false; $("#logout").hidden=true; setStatus(""); return; }
+  me = {nombre:getNombre()};
+  $("#logout").hidden=false; setStatus(me.nombre);
+  start();
+});
+function denied(){
+  unsubs.forEach(f=>f()); unsubs=[];
+  toast("No tenés acceso a los datos. Volvé a entrar con la contraseña.");
+  signOut(auth);
+}
+function start(){
+  $("#v-login").hidden=true; $("#app").hidden=false;
+  render();
+  const onErr = e => { if(e.code==="permission-denied") denied(); else { setStatus("Error de conexión"); toast("No se pudieron leer los datos. Revisá la conexión."); } };
+  unsubs.push(onSnapshot(doc(fs,"config","main"), s=>{
+    config = normalizar(s.data());
+    try { localStorage.setItem("dt-negocio", config.negocio); } catch {}
+    pintarNegocio(config.negocio);
+    if(state.tab!=="config") draft=null;
+    render();
+  }, onErr));
+  unsubs.push(onSnapshot(query(collection(fs,"movs"), orderBy("ts","desc"), limit(1000)), s=>{
+    movs = s.docs.map(d=>({id:d.id, ...d.data()})); loaded=true; render();
+  }, onErr));
+}
+
+// ---------- pestañas y botones ----------
+$$("nav button").forEach(b => b.onclick = () => go(b.dataset.tab));
+function go(t){ state.tab=t; $$("nav button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===t));
+  ["cargar","resumen","movs","config"].forEach(v=>$("#v-"+v).hidden = v!==t);
+  if(t==="config") startDraft(); render(); }
+function pressGroup(sel, attr, val){ $$(sel+" .chip").forEach(c=>c.setAttribute("aria-pressed", c.dataset[attr]===val)); }
+$("#modo").onclick = e => { const m=e.target.dataset?.m; if(!m) return; state.modo=m; pressGroup("#modo","m",m);
+  ["venta","gasto","ajuste"].forEach(x=>$("#f-"+x).hidden = x!==m); render(); };
+$("#medio").onclick = e => { const v=e.target.dataset?.v; if(v==null) return; state.medio=v; renderMedios(); };
+$("#aj-tipo").onclick = e => { const v=e.target.dataset?.v; if(!v) return; state.aj=v; pressGroup("#aj-tipo","v",v);
+  $("#aj-caja").hidden = v==="merma"; $("#aj-merma").hidden = v!=="merma"; validate(); };
+$("#periodo").onclick = e => { const p=e.target.dataset?.p; if(!p) return; state.periodo=p; pressGroup("#periodo","p",p); renderResumen(); };
+$("#filtro").onclick = e => { const f=e.target.dataset?.f; if(!f) return; state.filtro=f; pressGroup("#filtro","f",f); renderMovs(); };
+$("#gasto-cat").onclick = e => { const v=e.target.dataset?.v; if(v==null) return; state.cat=v; renderCats(); validate(); };
+["#gasto-monto","#aj-monto"].forEach(s=>$(s).addEventListener("input",validate));
+
+// ---------- tarjetas de gustos ----------
+function gustoCards(el, bag, showPrice){
+  const gs = gustosActivos();
+  if(!gs.length){ el.innerHTML = `<div class="note" style="grid-column:1/-1">Todavía no hay gustos en venta. Andá a <b>Configuración</b> y agregá los gustos con su precio por docena.</div>`; return; }
+  const fm = config.formatos.slice(0,4);
+  el.innerHTML = gs.map(g=>{ const n=bag[g.id]||0, nm=esc(g.nombre); return `<div class="g ${n?"on":""}">
+    <b>${nm}</b>${showPrice?`<span class="p">${fmt(precioDocDe(g))} la docena · ${fmt(precioDocDe(g)/2)} la media</span>`:""}
+    <div class="ctr"><button data-id="${g.id}" data-d="-1" aria-label="Una menos de ${nm}">−</button>
+      <span class="cnt"><span class="n">${n}</span><span class="doc">${enDocenas(n)}</span></span>
+      <button data-id="${g.id}" data-d="0" aria-label="Poner en cero ${nm}" title="Poner en cero" style="font-size:.9rem">0</button></div>
+    <div class="adds" style="grid-template-columns:repeat(${fm.length},minmax(0,1fr))">
+      ${fm.map(f=>`<button data-id="${g.id}" data-d="${f.cant}" aria-label="Sumar ${esc(f.nombre)} de ${nm}">+${f.cant}<small>${esc(f.nombre)}</small></button>`).join("")}
+    </div></div>`; }).join("");
+}
+function bump(bag, e){ const b=e.target.closest("button[data-id]"); if(!b) return; const id=b.dataset.id, d=+b.dataset.d;
+  bag[id] = d===0 ? 0 : Math.max(0,(bag[id]||0)+d); render(); }
+$("#venta-gustos").onclick = e => bump(state.cant,e);
+$("#merma-gustos").onclick = e => bump(state.merma,e);
+
+const itemsVenta = () => gustosActivos().filter(g=>state.cant[g.id]>0).map(g=>{ const n=state.cant[g.id], sub=precioLinea(g,n);
+  return {g:g.id, nombre:g.nombre, cant:n, subtotal:sub, precio:r2(sub/n), costo:r2(costoDocDe(g)/12), costoSub:costoLinea(g,n)}; });
+const itemsMerma = () => gustosActivos().filter(g=>state.merma[g.id]>0).map(g=>{ const n=state.merma[g.id];
+  return {g:g.id, nombre:g.nombre, cant:n, costo:r2(costoDocDe(g)/12), costoSub:costoLinea(g,n)}; });
+
+function validate(){
+  $("#venta-ok").disabled = !itemsVenta().length || !state.medio;
+  $("#gasto-ok").disabled = num($("#gasto-monto").value)<=0 || !state.cat;
+  $("#aj-ok").disabled = state.aj==="merma" ? !itemsMerma().length : num($("#aj-monto").value)<=0;
+}
+
+// ---------- guardar ----------
+async function save(d, btn){
+  btn.disabled = true; const now=new Date();
+  try { await addDoc(collection(fs,"movs"), {...d, ts:now.getTime(), fecha:ymd(now), quienNombre:me.nombre.slice(0,30)}); return true; }
+  catch(e){ writeErr(e); return false; } finally { validate(); }
+}
+function writeErr(e){
+  if(e.code==="permission-denied") toast("No se pudo guardar: el dato no es válido o se cerró la sesión. Volvé a entrar.");
+  else toast("No se pudo guardar. Revisá la conexión y probá de nuevo.");
+}
+$("#venta-ok").onclick = async e => { const items=itemsVenta(), total=items.reduce((s,i)=>s+i.subtotal,0);
+  if(await save({tipo:"venta", items, total, medio:state.medio, nota:$("#venta-nota").value.trim()}, e.target)){ state.cant={}; $("#venta-nota").value=""; toast("Venta guardada: "+fmt(total)); render(); } };
+$("#gasto-ok").onclick = async e => { const total=num($("#gasto-monto").value);
+  if(await save({tipo:"gasto", total, cat:state.cat, nota:$("#gasto-nota").value.trim()}, e.target)){ $("#gasto-monto").value=""; $("#gasto-nota").value=""; toast("Gasto guardado: "+fmt(total)); render(); } };
+$("#aj-ok").onclick = async e => { const nota=$("#aj-nota").value.trim(); let d;
+  if(state.aj==="merma"){ const items=itemsMerma(); d={tipo:"ajuste", clase:"merma", items, total:0, costoMerma:items.reduce((s,i)=>s+i.costoSub,0), nota}; }
+  else { const m=num($("#aj-monto").value); d={tipo:"ajuste", clase:"caja", total: state.aj==="falto"?-m:m, nota}; }
+  if(await save(d, e.target)){ state.merma={}; $("#aj-monto").value=""; $("#aj-nota").value=""; toast("Ajuste guardado"); render(); } };
+
+// ---------- movimientos ----------
+function desc(m){
+  const its = (m.items||[]).map(i=>`${i.cant} ${esc(i.nombre)}${enDocenas(i.cant)?` (${enDocenas(i.cant)})`:""}`).join(", ");
+  if(m.tipo==="venta") return its+` · ${esc(m.medio||"")}`+(m.nota?` · ${esc(m.nota)}`:"");
+  if(m.tipo==="gasto") return esc(m.cat||"Gasto")+(m.nota?` · ${esc(m.nota)}`:"");
+  if(m.clase==="merma") return "Perdidas/regaladas: "+its+(m.nota?` · ${esc(m.nota)}`:"");
+  return (m.total<0?"Faltó plata en caja":"Sobró plata en caja")+(m.nota?` · ${esc(m.nota)}`:"");
+}
+// Plata que mueve cada movimiento. Si se usa el costo por docena, ese costo ya se pagó para hacerlas: sale de la caja.
+const bruto = m => m.tipo==="venta"? m.total : m.tipo==="gasto"? -m.total : (m.clase==="caja"? m.total : 0);
+const costoDeMov = m => m.tipo==="venta" ? (m.items||[]).reduce((a,i)=>a+lineCosto(i),0) : (m.clase==="merma" ? (+m.costoMerma||0) : 0);
+const usaCostoCaja = () => config.modoGanancia !== "gastos";
+const signed = m => bruto(m) - (usaCostoCaja() ? costoDeMov(m) : 0);
+function mvRow(m){
+  const v=bruto(m), c=usaCostoCaja()?costoDeMov(m):0, neto=v-c;
+  const amt = (m.clase==="merma" ? `<span class="neg">${(m.items||[]).reduce((s,i)=>s+i.cant,0)} u.</span>` : `<span class="${v>=0?"pos":"neg"}">${v>=0?"+":"−"}${fmt(Math.abs(v))}</span>`)
+    + (c ? `<div class="who">${m.tipo==="venta"?`costo −${fmt(c)} · queda ${fmt(neto)}`:`costo −${fmt(c)}`}</div>` : "");
+  const hora = new Date(m.ts).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
+  const who = m.quienNombre ? ` · ${esc(m.quienNombre.split(" ")[0])}` : "";
+  const right = state.del===m.id
+    ? `<div class="confirm">¿Borrar? <button class="ghost danger" data-yes="${m.id}">Sí, borrar</button><button class="ghost" data-no="1">No</button></div>`
+    : `<div style="text-align:right"><div class="m">${amt}</div><button class="ghost" style="padding:3px 8px;margin-top:4px;font-size:.75rem" data-del="${m.id}">Borrar</button></div>`;
+  return `<div class="mv"><span class="tag ${m.tipo}">${m.tipo}</span><div><div class="d">${desc(m)}</div><div class="who">${hora}${who}</div></div>${right}</div>`;
+}
+async function onListClick(e){
+  const d=e.target.dataset;
+  if(d.del){ state.del=d.del; render(); }
+  else if(d.no){ state.del=null; render(); }
+  else if(d.yes){ try{ await deleteDoc(doc(fs,"movs",d.yes)); toast("Movimiento borrado"); }catch(err){ writeErr(err); } state.del=null; render(); }
+}
+$("#movs").onclick=onListClick; $("#ultimos").onclick=onListClick;
+function dayLabel(f){ const t=ymd(new Date()), y=ymd(new Date(Date.now()-864e5));
+  if(f===t) return "Hoy"; if(f===y) return "Ayer";
+  const [a,b,c]=f.split("-"); return new Date(+a,+b-1,+c).toLocaleDateString("es-AR",{weekday:"long",day:"numeric",month:"long"}); }
+const movsFiltrados = () => movs.filter(m=>state.filtro==="todo"||m.tipo===state.filtro);
+function renderMovs(){
+  const el=$("#movs"), list=movsFiltrados();
+  if(!loaded){ el.innerHTML=`<div class="empty">Cargando movimientos…</div>`; return; }
+  if(!list.length){ el.innerHTML=`<div class="empty">No hay movimientos ${state.filtro==="todo"?"todavía. Empezá desde la pestaña Cargar.":"de este tipo."}</div>`; return; }
+  let html="", day=null, sum=0, buf="";
+  const flush=()=>{ if(day) html+=`<div class="day"><span class="lbl">${dayLabel(day)}</span><span class="lbl ${sum>=0?"pos":"neg"}">${sum>=0?"+":"−"}${fmt(Math.abs(sum))}</span></div>`+buf; };
+  list.forEach(m=>{ if(m.fecha!==day){ flush(); day=m.fecha; sum=0; buf=""; } sum+=signed(m); buf+=mvRow(m); });
+  flush(); el.innerHTML=html;
+}
+function renderUltimos(){
+  const el=$("#ultimos");
+  if(!loaded){ el.innerHTML=`<div class="empty">Cargando…</div>`; return; }
+  el.innerHTML = movs.length ? movs.slice(0,4).map(mvRow).join("") : `<div class="empty">Acá van a aparecer las ventas, gastos y ajustes que cargue el grupo.</div>`;
+}
+// Exportar a Excel (CSV con punto y coma, como lo abre Excel en español)
+$("#csv").onclick = () => {
+  const list = movsFiltrados();
+  if(!list.length){ toast("No hay movimientos para descargar."); return; }
+  const q = v => `"${String(v??"").replace(/"/g,'""')}"`;
+  const n = v => String(Math.round(v||0));
+  const filas = [["Fecha","Hora","Tipo","Detalle","Forma de pago / categoría","Empanadas","Monto","Costo","Ganancia","Cargó"]];
+  list.slice().reverse().forEach(m=>{
+    const its=m.items||[], uds=its.reduce((s,i)=>s+i.cant,0);
+    const costo = m.tipo==="venta" ? its.reduce((s,i)=>s+lineCosto(i),0) : m.clase==="merma" ? (+m.costoMerma||0) : "";
+    const det = its.length ? its.map(i=>`${i.cant} ${i.nombre}`).join(", ") : (m.tipo==="ajuste" ? (m.total<0?"Faltó plata":"Sobró plata") : "");
+    filas.push([m.fecha, new Date(m.ts).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}), m.tipo,
+      [det, m.nota].filter(Boolean).join(" · "), m.medio||m.cat||"", uds||"", n(bruto(m)),
+      costo===""?"":n(costo), m.tipo==="venta"?n(m.total-costo):"", m.quienNombre||""]);
+  });
+  const csv = "﻿" + filas.map(f=>f.map(q).join(";")).join("\r\n");
+  const url = URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  const a = document.createElement("a"); a.href=url; a.download=`caja-${ymd(new Date())}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 2000);
+};
+
+// ---------- resumen ----------
+function inPeriod(m){ const p=state.periodo, now=new Date(); if(p==="todo") return true;
+  if(p==="hoy") return m.fecha===ymd(now); if(p==="semana") return m.ts >= now.getTime()-7*864e5;
+  return m.fecha.slice(0,7)===ymd(now).slice(0,7); }
+function barras(entries, color, fmtQ){
+  const mx=Math.max(1,...entries.map(x=>x[1]));
+  return entries.length ? entries.map(([n,v,extra])=>`<div class="bar"><span class="nm">${esc(n)}</span><span class="t"><i style="width:${v/mx*100}%;${color?`background:${color}`:""}"></i></span><span class="q">${fmtQ(v,extra)}</span></div>`).join("")
+    : `<div class="empty" style="padding:8px">Nada en este período.</div>`;
+}
+// Ganancia de una lista de movimientos, según cómo se eligió calcularla en Configuración
+function gananciaDe(list){
+  const usaCosto = config.modoGanancia!=="gastos", usaGastos = config.modoGanancia!=="costo";
+  return list.reduce((s,m)=>{
+    if(m.tipo==="venta") return s + m.total - (usaCosto ? costoDeMov(m) : 0);
+    if(m.tipo==="gasto") return s - (usaGastos ? m.total : 0);
+    if(m.clase==="merma") return s - (usaCosto ? costoDeMov(m) : 0);
+    return s;
+  },0);
+}
+function renderResumen(){
+  const L=movs.filter(inPeriod);
+  const ventas=L.filter(m=>m.tipo==="venta"), gastos=L.filter(m=>m.tipo==="gasto"), ajustes=L.filter(m=>m.tipo==="ajuste");
+  const vt=ventas.reduce((s,m)=>s+m.total,0), gt=gastos.reduce((s,m)=>s+m.total,0);
+  const aj=ajustes.filter(m=>m.clase==="caja").reduce((s,m)=>s+m.total,0);
+  const uds=ventas.reduce((s,m)=>s+(m.items||[]).reduce((a,i)=>a+i.cant,0),0);
+  const perdidas=ajustes.filter(m=>m.clase==="merma").reduce((s,m)=>s+(m.items||[]).reduce((a,i)=>a+i.cant,0),0);
+  const costoVend=ventas.reduce((s,m)=>s+(m.items||[]).reduce((a,i)=>a+lineCosto(i),0),0);
+  const costoPerd=ajustes.filter(m=>m.clase==="merma").reduce((s,m)=>s+(+m.costoMerma||0),0);
+  const sinCosto=ventas.reduce((s,m)=>s+(m.items||[]).filter(i=>!lineCosto(i)).reduce((a,i)=>a+i.cant,0),0);
+  const modo=config.modoGanancia;
+  const usaCosto = modo!=="gastos", usaGastos = modo!=="costo";
+  const gan = vt - (usaCosto ? costoVend+costoPerd : 0) - (usaGastos ? gt : 0);
+  // La inversión inicial se guarda en el campo cajaInicial (mismo dato, nombre viejo)
+  const inv = +config.cajaInicial||0;
+  const caja = inv + movs.reduce((s,m)=>s+signed(m),0);
+  const ganTotal = gananciaDe(movs), real = ganTotal - inv, recup = inv ? Math.max(0, Math.min(100, ganTotal/inv*100)) : 0;
+  const formula = [`${fmt(vt)} vendido`, usaCosto?`${fmt(costoVend)} de costo`:"", usaCosto&&costoPerd?`${fmt(costoPerd)} de empanadas perdidas`:"", usaGastos?`${fmt(gt)} de gastos`:""].filter(Boolean).join(" − ");
+  const meta=+config.meta||0, mesV=movs.filter(m=>m.tipo==="venta"&&m.fecha.slice(0,7)===ymd(new Date()).slice(0,7)).reduce((s,m)=>s+m.total,0);
+  $("#kpis").innerHTML = `
+    <div class="kpi hero"><div class="lbl">Plata que debería haber hoy</div><div class="v">${caja<0?"−":""}${fmt(Math.abs(caja))}</div><div class="sub" style="color:inherit;opacity:.75">inversión inicial + ventas${usaCosto?" − costo de producción":""} − gastos ± ajustes</div></div>
+    ${inv ? `<div class="kpi wide"><div class="lbl">Ganancia real (sacando la inversión)</div><div class="v ${real>=0?"pos":"neg"}" style="font-size:1.8rem">${real<0?"−":""}${fmt(Math.abs(real))}</div>
+      <div class="sub">Desde que arrancaron: ${fmt(ganTotal)} de ganancia − ${fmt(inv)} de inversión</div>
+      <div class="meter"><i style="width:${recup}%"></i></div>
+      <div class="sub" style="margin-top:4px">${real>=0 ? "Ya recuperaron toda la inversión." : `Recuperaron el ${Math.round(recup)}% de la inversión · faltan ${fmt(-real)}`}</div></div>`
+      : `<div class="kpi wide"><div class="lbl">Ganancia real (sacando la inversión)</div><div class="sub">Cargá la inversión inicial en Configuración para ver cuánto ganaron de verdad.</div></div>`}
+    <div class="kpi wide"><div class="lbl">Ganancia</div><div class="v ${gan>=0?"pos":"neg"}" style="font-size:1.8rem">${gan<0?"−":""}${fmt(Math.abs(gan))}</div>
+      <div class="sub">${formula}${vt?` · ${Math.round(gan/vt*100)}% de lo vendido`:""}</div>
+      ${usaCosto&&sinCosto?`<div class="sub neg" style="margin-top:4px">${sinCosto} empanadas vendidas no tenían costo cargado: la ganancia real es menor. Cargá el costo por docena en Configuración.</div>`:""}</div>
+    ${meta?`<div class="kpi wide"><div class="lbl">Meta de ventas del mes</div><div class="v">${fmt(mesV)} <span class="sub">de ${fmt(meta)}</span></div><div class="meter"><i style="width:${Math.min(100,mesV/meta*100)}%"></i></div><div class="sub" style="margin-top:4px">${mesV>=meta?"¡Meta cumplida!":"Faltan "+fmt(meta-mesV)}</div></div>`:""}
+    <div class="kpi"><div class="lbl">Vendido</div><div class="v pos">${fmt(vt)}</div><div class="sub">${uds} empanadas${enDocenas(uds)?" · "+enDocenas(uds):""}</div></div>
+    <div class="kpi"><div class="lbl">Costo de lo vendido</div><div class="v neg">${fmt(costoVend)}</div><div class="sub">${usaCosto?"ya se pagó: sale de la ganancia y de la caja":"no se usa"}</div></div>
+    <div class="kpi"><div class="lbl">Gastos cargados</div><div class="v neg">${fmt(gt)}</div><div class="sub">${gastos.length} gastos · ${usaGastos?"se restan de la ganancia":"solo bajan la caja"}</div></div>
+    <div class="kpi"><div class="lbl">Ajustes de caja</div><div class="v ${aj<0?"neg":""}">${aj<0?"−":aj>0?"+":""}${fmt(Math.abs(aj))}</div><div class="sub">${perdidas} empanadas perdidas o regaladas</div></div>`;
+  const byG={}; ventas.forEach(m=>(m.items||[]).forEach(i=>{ byG[i.nombre]=byG[i.nombre]||[i.nombre,0,0]; byG[i.nombre][1]+=i.cant; byG[i.nombre][2]+=lineVenta(i); }));
+  $("#bars-gustos").innerHTML = barras(Object.values(byG).sort((a,b)=>b[1]-a[1]), "", (c,p)=>`${c} u. · ${fmt(p)}`);
+  const byM={}; ventas.forEach(m=>byM[m.medio||"Sin dato"]=(byM[m.medio||"Sin dato"]||0)+m.total);
+  $("#bars-medios").innerHTML = barras(Object.entries(byM).sort((a,b)=>b[1]-a[1]), "var(--brown)", v=>fmt(v));
+  const byC={}; gastos.forEach(m=>byC[m.cat||"Otros"]=(byC[m.cat||"Otros"]||0)+m.total);
+  $("#bars-gastos").innerHTML = barras(Object.entries(byC).sort((a,b)=>b[1]-a[1]), "var(--bad)", v=>fmt(v));
+  const gs=gustosActivos();
+  $("#margen").innerHTML = gs.length ? `<thead><tr><th>Gusto</th><th style="text-align:right">Cobran</th><th style="text-align:right">Cuesta</th><th style="text-align:right">Deja</th></tr></thead><tbody>` +
+    gs.map(g=>{ const pd=precioDocDe(g), cd=costoDocDe(g), d=pd-cd, pct=pd? Math.round(d/pd*100):0;
+      return `<tr><td>${esc(g.nombre)}</td><td class="num">${fmt(pd)}</td><td class="num">${cd?fmt(cd):"—"}</td><td class="num ${d>=0?"pos":"neg"}">${cd?fmt(d)+` <span class="sub">${pct}%</span>`:`<span class="sub">falta costo</span>`}</td></tr>`; }).join("")+"</tbody>"
+    : `<tbody><tr><td class="empty">Cargá gustos con precio y costo por docena en Configuración.</td></tr></tbody>`;
+}
+
+// ---------- configuración ----------
+function startDraft(){
+  draft = clone(config);
+  draft.gustos = draft.gustos.map(g=>({id:g.id, nombre:g.nombre, precioDoc:precioDocDe(g), costoDoc:costoDocDe(g), precioSuelta:+g.precioSuelta||0, activo:g.activo!==false}));
+  $("#cfg-negocio").value = draft.negocio || "";
+  $("#cfg-meta").value = draft.meta || "";
+  $("#cfg-caja").value = draft.cajaInicial || "";
+  $$('#cfg-modo input').forEach(r=>r.checked = r.value===draft.modoGanancia);
+  $("#cfg-msg").textContent="";
+}
+function previewGusto(g){
+  if(!g.precioDoc) return "Falta el precio por docena.";
+  const d = g.precioDoc-g.costoDoc;
+  return `Media ${fmt(g.precioDoc/2)} · suelta ${fmt(g.precioSuelta||g.precioDoc/12)}` + (g.costoDoc ? ` · deja ${fmt(d)} por docena (${Math.round(d/g.precioDoc*100)}%)` : " · falta el costo");
+}
+function renderConfig(){
+  if(!draft) startDraft();
+  $("#cfg-gustos").innerHTML = draft.gustos.length ? draft.gustos.map((g,i)=>`<div class="gcfg ${g.activo?"":"off"}">
+      <div class="top"><input id="gn-${g.id}" data-i="${i}" data-k="nombre" value="${esc(g.nombre)}" placeholder="Nombre del gusto" maxlength="40" aria-label="Nombre del gusto">
+        <label class="sw"><input type="checkbox" id="ga-${g.id}" data-i="${i}" data-k="activo" ${g.activo?"checked":""}> En venta</label>
+        <button class="ghost danger" data-rm="${i}" aria-label="Borrar ${esc(g.nombre)}">✕</button></div>
+      <div class="tri">
+        <label>Precio docena<input id="gp-${g.id}" data-i="${i}" data-k="precioDoc" inputmode="decimal" value="${g.precioDoc||""}" placeholder="$"></label>
+        <label>Costo docena<input id="gc-${g.id}" data-i="${i}" data-k="costoDoc" inputmode="decimal" value="${g.costoDoc||""}" placeholder="$"></label>
+        <label>Precio suelta<input id="gs-${g.id}" data-i="${i}" data-k="precioSuelta" inputmode="decimal" value="${g.precioSuelta||""}" placeholder="auto"></label>
+      </div>
+      <div class="sub" id="gv-${g.id}">${previewGusto(g)}</div></div>`).join("") : `<div class="sub">Sin gustos todavía.</div>`;
+  $("#cfg-tipicos").hidden = draft.gustos.length>0;
+  $("#cfg-formatos").innerHTML = draft.formatos.map((f,i)=>`<div class="frow">
+      <input id="fn-${i}" data-i="${i}" data-k="nombre" value="${esc(f.nombre)}" placeholder="Nombre del botón" maxlength="20" aria-label="Nombre del botón">
+      <input id="fc-${i}" data-i="${i}" data-k="cant" inputmode="numeric" value="${f.cant||""}" placeholder="Cant." aria-label="Cantidad de empanadas">
+      <button class="ghost danger" data-rmf="${i}" aria-label="Quitar botón" ${draft.formatos.length<=1?"disabled":""}>✕</button></div>`).join("");
+  $("#cfg-formato-add").hidden = draft.formatos.length>=4;
+  $("#cfg-medios").innerHTML = draft.medios.map((c,i)=>`<button class="chip" data-rmm="${i}" aria-label="Quitar ${esc(c)}" ${i===0?'aria-pressed="true"':""}>${esc(c)} ✕</button>`).join("") || `<span class="sub">Agregá al menos una.</span>`;
+  $("#cfg-cats").innerHTML = draft.cats.map((c,i)=>`<button class="chip" data-rmc="${i}" aria-label="Quitar ${esc(c)}">${esc(c)} ✕</button>`).join("") || `<span class="sub">Sin categorías.</span>`;
+}
+const numKeys = ["precioDoc","costoDoc","precioSuelta"];
+$("#cfg-gustos").addEventListener("input", e=>{ const t=e.target; if(t.dataset.i==null) return; const g=draft.gustos[+t.dataset.i], k=t.dataset.k;
+  if(k==="activo"){ g.activo=t.checked; renderConfig(); return; }
+  g[k] = numKeys.includes(k) ? num(t.value) : t.value;
+  const pv=$("#gv-"+g.id); if(pv) pv.textContent = previewGusto(g); });
+$("#cfg-gustos").addEventListener("change", e=>{ if(e.target.dataset.k==="activo"){ draft.gustos[+e.target.dataset.i].activo=e.target.checked; renderConfig(); } });
+$("#cfg-gustos").onclick = e=>{ const r=e.target.dataset.rm; if(r==null) return; draft.gustos.splice(+r,1); renderConfig(); };
+$("#cfg-add").onclick = ()=>{ draft.gustos.push({id:uid(),nombre:"",precioDoc:0,costoDoc:0,precioSuelta:0,activo:true}); renderConfig(); $("#gn-"+draft.gustos.at(-1).id)?.focus(); };
+$("#cfg-tipicos").onclick = ()=>{ draft.gustos=["Carne","Pollo","Jamón y queso","Humita","Caprese"].map(n=>({id:uid(),nombre:n,precioDoc:0,costoDoc:0,precioSuelta:0,activo:true})); renderConfig(); $("#cfg-msg").textContent="Completá el precio y el costo por docena de cada gusto y tocá Guardar."; };
+$("#cfg-formatos").addEventListener("input", e=>{ const t=e.target; if(t.dataset.i==null) return; const f=draft.formatos[+t.dataset.i];
+  f[t.dataset.k] = t.dataset.k==="cant" ? Math.round(num(t.value)) : t.value; });
+$("#cfg-formatos").onclick = e=>{ const r=e.target.dataset.rmf; if(r==null || draft.formatos.length<=1) return; draft.formatos.splice(+r,1); renderConfig(); };
+$("#cfg-formato-add").onclick = ()=>{ if(draft.formatos.length>=4) return; draft.formatos.push({nombre:"",cant:0}); renderConfig(); $("#fn-"+(draft.formatos.length-1))?.focus(); };
+function listaEditable(listKey, chipsSel, inputSel, btnSel, attr, max){
+  $(chipsSel).onclick = e=>{ const r=e.target.dataset[attr]; if(r==null) return; draft[listKey].splice(+r,1); renderConfig(); };
+  const add = ()=>{ const v=$(inputSel).value.trim(); if(!v) return;
+    if(draft[listKey].some(x=>x.toLowerCase()===v.toLowerCase())){ toast("Esa opción ya está."); return; }
+    if(draft[listKey].length>=max){ toast("Llegaste al máximo de opciones."); return; }
+    draft[listKey].push(v); $(inputSel).value=""; renderConfig(); };
+  $(btnSel).onclick = add;
+  $(inputSel).addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); add(); } });
+}
+listaEditable("medios","#cfg-medios","#cfg-medio-new","#cfg-medio-add","rmm",10);
+listaEditable("cats","#cfg-cats","#cfg-cat-new","#cfg-cat-add","rmc",40);
+$("#cfg-modo").addEventListener("change", e=>{ if(e.target.name==="modo") draft.modoGanancia=e.target.value; });
+$("#cfg-negocio").addEventListener("input", e=> draft.negocio=e.target.value);
+$("#cfg-meta").addEventListener("input", e=> draft.meta=num(e.target.value));
+$("#cfg-caja").addEventListener("input", e=> draft.cajaInicial=num(e.target.value));
+
+$("#cfg-save").onclick = async ()=>{
+  const gustos = draft.gustos.filter(g=>g.nombre.trim()).map(g=>{ const pd=+g.precioDoc||0, cd=+g.costoDoc||0, ps=+g.precioSuelta||0;
+    return {id:g.id, nombre:g.nombre.trim(), precioDoc:pd, costoDoc:cd, precioSuelta:ps, activo:!!g.activo, precio:r2(ps||pd/12), costo:r2(cd/12)}; });
+  const formatos = draft.formatos.map(f=>({nombre:(f.nombre||"").trim(), cant:Math.round(+f.cant||0)})).filter(f=>f.nombre && f.cant>0 && f.cant<=1000);
+  if(!formatos.length){ toast("Dejá al menos un botón de cantidad con nombre y número."); return; }
+  if(!draft.medios.length){ toast("Dejá al menos una forma de pago."); return; }
+  const body = {negocio:(draft.negocio||"").trim()||DEF.negocio, gustos, formatos, medios:draft.medios, cats:draft.cats,
+    modoGanancia:draft.modoGanancia||"costo", meta:+draft.meta||0, cajaInicial:+draft.cajaInicial||0};
+  $("#cfg-save").disabled=true;
+  try{ await setDoc(doc(fs,"config","main"), body); config=normalizar(body); pintarNegocio(config.negocio); startDraft(); toast("Configuración guardada");
+    $("#cfg-msg").textContent="Guardado. Los precios y costos nuevos valen para las ventas que se carguen de ahora en más."; }
+  catch(e){ writeErr(e); }
+  $("#cfg-save").disabled=false; render();
+};
+
+// ---------- cambiar contraseña ----------
+$("#pass-form").onsubmit = async e => {
+  e.preventDefault();
+  const actual=$("#pass-actual").value, nueva=$("#pass-nueva").value, repe=$("#pass-repe").value;
+  if(nueva.length<8){ toast("La nueva tiene que tener al menos 8 caracteres."); return; }
+  if(nueva!==repe){ toast("Las dos contraseñas nuevas no coinciden."); return; }
+  try{
+    await reauthenticateWithCredential(auth.currentUser, EmailAuthProvider.credential(CUENTA, actual));
+    await updatePassword(auth.currentUser, nueva);
+    e.target.reset(); toast("Contraseña cambiada. Pasale la nueva al grupo.");
+  }catch(err){ toast(ERR_LOGIN[err.code] || (err.code==="auth/weak-password" ? "La nueva es muy débil, probá una más larga." : "No se pudo cambiar ("+err.code+").")); }
+};
+
+// ---------- render ----------
+function renderCats(){
+  const cats=config.cats.length? config.cats : DEF.cats;
+  if(state.cat && !cats.includes(state.cat)) state.cat=null;
+  $("#gasto-cat").innerHTML = cats.map(c=>`<button class="chip" data-v="${esc(c)}" aria-pressed="${state.cat===c}">${esc(c)}</button>`).join("");
+}
+function renderMedios(){
+  if(!state.medio || !config.medios.includes(state.medio)) state.medio = config.medios[0] || null;
+  $("#medio").innerHTML = config.medios.map(c=>`<button class="chip" data-v="${esc(c)}" aria-pressed="${state.medio===c}">${esc(c)}</button>`).join("");
+  validate();
+}
+function render(){
+  gustoCards($("#venta-gustos"), state.cant, true);
+  gustoCards($("#merma-gustos"), state.merma, false);
+  const itv = itemsVenta(), total = itv.reduce((s,i)=>s+i.subtotal,0), uds = itv.reduce((s,i)=>s+i.cant,0);
+  $("#venta-total").textContent = fmt(total);
+  $("#venta-uds").textContent = uds ? uds+" empanadas"+(enDocenas(uds)?" · "+enDocenas(uds):"") : "";
+  const gv = total - itv.reduce((s,i)=>s+i.costoSub,0), faltaCosto = itv.some(i=>!i.costoSub);
+  $("#venta-gan").innerHTML = itv.length ? `Ganancia: <b class="${gv>=0?"pos":"neg"}">${gv<0?"−":""}${fmt(Math.abs(gv))}</b>${faltaCosto?" · falta cargar costo":""}` : "";
+  renderMedios(); renderCats(); validate(); renderUltimos();
+  if(state.tab==="resumen") renderResumen();
+  if(state.tab==="movs") renderMovs();
+  if(state.tab==="config") renderConfig();
+}
+</script>
+</body>
+</html>
