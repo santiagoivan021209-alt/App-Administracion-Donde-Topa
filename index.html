@@ -67,6 +67,7 @@ input{font:500 1rem var(--body);color:var(--ink);background:var(--surface);borde
 .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;min-width:0}
 .kpi .v{font:800 1.35rem var(--display);font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi.wide{grid-column:1/-1}
 .kpi.hero{grid-column:1/-1;background:var(--brown);border-color:var(--brown);color:var(--bg)}
 .kpi.hero .lbl{color:var(--bg);opacity:.75}
 .kpi.hero .v{font-size:2rem;color:var(--bg)}
@@ -151,7 +152,7 @@ td.num{font-variant-numeric:tabular-nums;text-align:right}
         </div>
       </div>
       <input id="venta-nota" placeholder="Nota (opcional): a quién, pedido, etc.">
-      <div class="card total"><div><span class="lbl">Total</span><div class="sub" id="venta-uds"></div></div><span class="money" id="venta-total">$ 0</span></div>
+      <div class="card total"><div><span class="lbl">Total</span><div class="sub" id="venta-uds"></div></div><div style="text-align:right"><span class="money" id="venta-total">$ 0</span><div class="sub" id="venta-gan"></div></div></div>
       <button class="go" id="venta-ok" disabled>Guardar venta</button>
     </div>
 
@@ -192,7 +193,7 @@ td.num{font-variant-numeric:tabular-nums;text-align:right}
     <div class="card"><div class="bars" id="bars-gustos"></div></div>
     <h2>En qué se fue la plata</h2>
     <div class="card"><div class="bars" id="bars-gastos"></div></div>
-    <h2>Cuánto deja cada empanada</h2>
+    <h2>Cuánto deja cada docena</h2>
     <div class="card tbl"><table id="margen"></table></div>
   </section>
 
@@ -208,9 +209,9 @@ td.num{font-variant-numeric:tabular-nums;text-align:right}
 
   <section id="v-config" hidden>
     <h2 style="margin-top:4px">Gustos, precios y costos</h2>
-    <p class="sub" style="margin:0 0 10px">El costo es lo que les sale hacer una empanada de ese gusto. Se usa para calcular cuánto deja cada una.</p>
+    <p class="sub" style="margin:0 0 10px">Todo <b>por docena</b>. Precio: lo que cobran la docena. Costo: lo que les sale hacer una docena de ese gusto (ingredientes, tapas, etc.). La media docena y la unidad se calculan solas.</p>
     <div class="card stack">
-      <div class="cfg-row lbl"><span>Gusto</span><span>Precio</span><span>Costo</span><span></span></div>
+      <div class="cfg-row lbl"><span>Gusto</span><span>Precio docena</span><span>Costo docena</span><span></span></div>
       <div id="cfg-gustos" class="stack" style="gap:6px"></div>
       <div class="row"><button class="ghost" id="cfg-add">+ Agregar gusto</button>
         <button class="ghost" id="cfg-tipicos" hidden>Cargar gustos típicos para editar</button></div>
@@ -350,7 +351,7 @@ $("#gasto-cat").onclick = e => { const v=e.target.dataset?.v; if(v==null) return
 function gustoCards(el, bag, showPrice){
   if(!config.gustos.length){ el.innerHTML = `<div class="note" style="grid-column:1/-1">Todavía no hay gustos cargados. Andá a <b>Configuración</b> y agregá los gustos con su precio.</div>`; return; }
   el.innerHTML = config.gustos.map(g=>{ const n=bag[g.id]||0, nm=esc(g.nombre); return `<div class="g ${n?"on":""}">
-    <b>${nm}</b>${showPrice?`<span class="p">${fmt(g.precio)} c/u</span>`:""}
+    <b>${nm}</b>${showPrice?`<span class="p">${fmt(precioDocDe(g))} la docena · ${fmt(precioDocDe(g)/2)} la media</span>`:""}
     <div class="ctr"><button data-id="${g.id}" data-d="-1" aria-label="Una menos de ${nm}">−</button>
       <span class="cnt"><span class="n">${n}</span><span class="doc">${enDocenas(n)}</span></span>
       <button data-id="${g.id}" data-d="0" aria-label="Poner en cero ${nm}" title="Poner en cero" style="font-size:.9rem">0</button></div>
@@ -372,8 +373,13 @@ function enDocenas(n){
 }
 $("#venta-gustos").onclick = e => bump(state.cant,e);
 $("#merma-gustos").onclick = e => bump(state.merma,e);
-const itemsOf = bag => config.gustos.filter(g=>bag[g.id]>0).map(g=>({g:g.id, nombre:g.nombre, cant:bag[g.id], precio:+g.precio||0, costo:+g.costo||0}));
-const ventaTotal = () => itemsOf(state.cant).reduce((s,i)=>s+i.cant*i.precio,0);
+const precioDocDe = g => +g.precioDoc || (+g.precio||0)*12;
+const precioUnit = g => Math.round(precioDocDe(g)/12*100)/100;
+const costoDocDe = g => +g.costoDoc || (+g.costo||0)*12;
+const costoUnit = g => Math.round(costoDocDe(g)/12*100)/100;
+const itemsOf = bag => config.gustos.filter(g=>bag[g.id]>0).map(g=>({g:g.id, nombre:g.nombre, cant:bag[g.id], precio:precioUnit(g), costo:costoUnit(g)}));
+const costoItems = items => items.reduce((s,i)=>s+i.cant*(+i.costo||0),0);
+const ventaTotal = () => Math.round(itemsOf(state.cant).reduce((s,i)=>s+i.cant*i.precio,0));
 
 function validate(){
   $("#venta-ok").disabled = !itemsOf(state.cant).length;
@@ -454,13 +460,19 @@ function renderResumen(){
   const aj=ajustes.filter(m=>m.clase==="caja").reduce((s,m)=>s+m.total,0);
   const uds=ventas.reduce((s,m)=>s+(m.items||[]).reduce((a,i)=>a+i.cant,0),0);
   const merma=ajustes.filter(m=>m.clase==="merma").reduce((s,m)=>s+(m.items||[]).reduce((a,i)=>a+i.cant,0),0);
-  const gan=vt-gt+aj, caja=(+config.cajaInicial||0)+movs.reduce((s,m)=>s+signed(m),0);
+  const costoVend=ventas.reduce((s,m)=>s+costoItems(m.items||[]),0);
+  const costoPerd=ajustes.filter(m=>m.clase==="merma").reduce((s,m)=>s+(+m.costoMerma||0),0);
+  const sinCosto=ventas.reduce((s,m)=>s+(m.items||[]).filter(i=>!i.costo).reduce((a,i)=>a+i.cant,0),0);
+  const gan=vt-costoVend-costoPerd, caja=(+config.cajaInicial||0)+movs.reduce((s,m)=>s+signed(m),0);
   const efe=ventas.filter(m=>m.medio==="Efectivo").reduce((s,m)=>s+m.total,0);
   $("#kpis").innerHTML = `
     <div class="kpi hero"><div class="lbl">Plata que debería haber hoy (caja inicial + todo lo cargado)</div><div class="v">${caja<0?"−":""}${fmt(Math.abs(caja))}</div></div>
+    <div class="kpi wide"><div class="lbl">Ganancia</div><div class="v ${gan>=0?"pos":"neg"}" style="font-size:1.8rem">${gan<0?"−":""}${fmt(Math.abs(gan))}</div>
+      <div class="sub">${fmt(vt)} vendido − ${fmt(costoVend)} de costo${costoPerd?` − ${fmt(costoPerd)} de empanadas perdidas`:""}${vt?` · ${Math.round(gan/vt*100)}% de lo vendido`:""}</div>
+      ${sinCosto?`<div class="sub neg" style="margin-top:4px">${sinCosto} empanadas vendidas no tenían costo cargado: la ganancia real es menor. Cargá el costo por docena en Configuración.</div>`:""}</div>
     <div class="kpi"><div class="lbl">Vendido</div><div class="v pos">${fmt(vt)}</div><div class="sub">${uds} empanadas · ${fmt(efe)} en efectivo</div></div>
-    <div class="kpi"><div class="lbl">Gastado</div><div class="v neg">${fmt(gt)}</div><div class="sub">${gastos.length} compras</div></div>
-    <div class="kpi"><div class="lbl">Ganancia</div><div class="v ${gan>=0?"pos":"neg"}">${gan<0?"−":""}${fmt(Math.abs(gan))}</div><div class="sub">vendido − gastado ± ajustes</div></div>
+    <div class="kpi"><div class="lbl">Costo de lo vendido</div><div class="v neg">${fmt(costoVend)}</div><div class="sub">${enDocenas(uds)||uds+" empanadas"} a costo de docena</div></div>
+    <div class="kpi"><div class="lbl">Compras registradas</div><div class="v neg">${fmt(gt)}</div><div class="sub">${gastos.length} gastos · salen de la caja, no de la ganancia</div></div>
     <div class="kpi"><div class="lbl">Ajustes de caja</div><div class="v ${aj<0?"neg":""}">${aj<0?"−":aj>0?"+":""}${fmt(Math.abs(aj))}</div><div class="sub">${merma} empanadas perdidas o regaladas</div></div>`;
   const byG={}; ventas.forEach(m=>(m.items||[]).forEach(i=>{ byG[i.nombre]=byG[i.nombre]||{c:0,p:0}; byG[i.nombre].c+=i.cant; byG[i.nombre].p+=i.cant*i.precio; }));
   const gs=Object.entries(byG).sort((a,b)=>b[1].c-a[1].c), mx=Math.max(1,...gs.map(x=>x[1].c));
@@ -468,35 +480,35 @@ function renderResumen(){
   const byC={}; gastos.forEach(m=>byC[m.cat||"Otros"]=(byC[m.cat||"Otros"]||0)+m.total);
   const cs=Object.entries(byC).sort((a,b)=>b[1]-a[1]), mc=Math.max(1,...cs.map(x=>x[1]));
   $("#bars-gastos").innerHTML = cs.length ? cs.map(([n,v])=>`<div class="bar"><span class="nm">${esc(n)}</span><span class="t"><i style="width:${v/mc*100}%;background:var(--bad)"></i></span><span class="q">${fmt(v)}</span></div>`).join("") : `<div class="empty" style="padding:8px">Sin gastos en este período.</div>`;
-  $("#margen").innerHTML = config.gustos.length ? `<thead><tr><th>Gusto</th><th style="text-align:right">Precio</th><th style="text-align:right">Costo</th><th style="text-align:right">Deja</th></tr></thead><tbody>` +
-    config.gustos.map(g=>{ const d=(+g.precio||0)-(+g.costo||0), pct=g.precio? Math.round(d/g.precio*100):0;
-      return `<tr><td>${esc(g.nombre)}</td><td class="num">${fmt(g.precio)}</td><td class="num">${g.costo?fmt(g.costo):"—"}</td><td class="num ${d>=0?"pos":"neg"}">${fmt(d)} <span class="sub">${g.costo?pct+"%":""}</span></td></tr>`; }).join("")+"</tbody>"
-    : `<tbody><tr><td class="empty">Cargá gustos con precio y costo en Configuración.</td></tr></tbody>`;
+  $("#margen").innerHTML = config.gustos.length ? `<thead><tr><th>Gusto</th><th style="text-align:right">Cobran</th><th style="text-align:right">Cuesta</th><th style="text-align:right">Deja</th></tr></thead><tbody>` +
+    config.gustos.map(g=>{ const pd=precioDocDe(g), cd=costoDocDe(g), d=pd-cd, pct=pd? Math.round(d/pd*100):0;
+      return `<tr><td>${esc(g.nombre)}</td><td class="num">${fmt(pd)}</td><td class="num">${cd?fmt(cd):"—"}</td><td class="num ${d>=0?"pos":"neg"}">${cd?fmt(d)+` <span class="sub">${pct}%</span>`:`<span class="sub">falta costo</span>`}</td></tr>`; }).join("")+"</tbody>"
+    : `<tbody><tr><td class="empty">Cargá gustos con precio y costo por docena en Configuración.</td></tr></tbody>`;
 }
 
 // ---------- configuración ----------
-function startDraft(){ draft={gustos:config.gustos.map(g=>({...g})), cats:config.cats.slice(), cajaInicial:config.cajaInicial||0}; $("#cfg-caja").value=draft.cajaInicial||""; $("#cfg-msg").textContent=""; }
+function startDraft(){ draft={gustos:config.gustos.map(g=>({...g, precioDoc:precioDocDe(g), costoDoc:costoDocDe(g)})), cats:config.cats.slice(), cajaInicial:config.cajaInicial||0}; $("#cfg-caja").value=draft.cajaInicial||""; $("#cfg-msg").textContent=""; }
 function renderConfig(){
   if(!draft) startDraft();
   $("#cfg-gustos").innerHTML = draft.gustos.length ? draft.gustos.map((g,i)=>`<div class="cfg-row">
       <input id="gn-${g.id}" data-i="${i}" data-k="nombre" value="${esc(g.nombre)}" placeholder="Gusto" aria-label="Nombre del gusto">
-      <input id="gp-${g.id}" data-i="${i}" data-k="precio" inputmode="decimal" value="${g.precio||""}" placeholder="$" aria-label="Precio">
-      <input id="gc-${g.id}" data-i="${i}" data-k="costo" inputmode="decimal" value="${g.costo||""}" placeholder="$" aria-label="Costo">
+      <input id="gp-${g.id}" data-i="${i}" data-k="precioDoc" inputmode="decimal" value="${g.precioDoc||""}" placeholder="$" aria-label="Precio por docena">
+      <input id="gc-${g.id}" data-i="${i}" data-k="costoDoc" inputmode="decimal" value="${g.costoDoc||""}" placeholder="$" aria-label="Costo por docena">
       <button class="ghost danger" data-rm="${i}" aria-label="Quitar gusto">✕</button></div>`).join("") : `<div class="sub">Sin gustos todavía.</div>`;
   $("#cfg-tipicos").hidden = draft.gustos.length>0;
   $("#cfg-cats").innerHTML = draft.cats.map((c,i)=>`<button class="chip" data-rmc="${i}" aria-label="Quitar ${esc(c)}">${esc(c)} ✕</button>`).join("") || `<span class="sub">Sin categorías.</span>`;
 }
 $("#cfg-gustos").addEventListener("input", e=>{ const t=e.target; if(t.dataset.i==null) return; const g=draft.gustos[+t.dataset.i]; g[t.dataset.k] = t.dataset.k==="nombre"? t.value : num(t.value); });
 $("#cfg-gustos").onclick = e=>{ const r=e.target.dataset.rm; if(r==null) return; draft.gustos.splice(+r,1); renderConfig(); };
-$("#cfg-add").onclick = ()=>{ draft.gustos.push({id:uid(),nombre:"",precio:0,costo:0}); renderConfig(); $("#gn-"+draft.gustos.at(-1).id)?.focus(); };
-$("#cfg-tipicos").onclick = ()=>{ draft.gustos=["Carne","Pollo","Jamón y queso","Humita","Caprese"].map(n=>({id:uid(),nombre:n,precio:0,costo:0})); renderConfig(); $("#cfg-msg").textContent="Completá precio y costo de cada gusto y tocá Guardar."; };
+$("#cfg-add").onclick = ()=>{ draft.gustos.push({id:uid(),nombre:"",precioDoc:0,costoDoc:0}); renderConfig(); $("#gn-"+draft.gustos.at(-1).id)?.focus(); };
+$("#cfg-tipicos").onclick = ()=>{ draft.gustos=["Carne","Pollo","Jamón y queso","Humita","Caprese"].map(n=>({id:uid(),nombre:n,precioDoc:0,costoDoc:0})); renderConfig(); $("#cfg-msg").textContent="Completá el precio y el costo por docena de cada gusto y tocá Guardar."; };
 $("#cfg-cats").onclick = e=>{ const r=e.target.dataset.rmc; if(r==null) return; draft.cats.splice(+r,1); renderConfig(); };
 $("#cfg-cat-add").onclick = ()=>{ const v=$("#cfg-cat-new").value.trim(); if(v && !draft.cats.includes(v)){ draft.cats.push(v); $("#cfg-cat-new").value=""; renderConfig(); } };
 $("#cfg-caja").addEventListener("input", e=> draft.cajaInicial=num(e.target.value));
 $("#cfg-save").onclick = async ()=>{
-  const body={gustos:draft.gustos.filter(g=>g.nombre.trim()).map(g=>({id:g.id,nombre:g.nombre.trim(),precio:+g.precio||0,costo:+g.costo||0})), cats:draft.cats, cajaInicial:+draft.cajaInicial||0};
+  const body={gustos:draft.gustos.filter(g=>g.nombre.trim()).map(g=>{ const pd=+g.precioDoc||0, cd=+g.costoDoc||0; return {id:g.id,nombre:g.nombre.trim(),precioDoc:pd,precio:Math.round(pd/12*100)/100,costoDoc:cd,costo:Math.round(cd/12*100)/100}; }), cats:draft.cats, cajaInicial:+draft.cajaInicial||0};
   $("#cfg-save").disabled=true;
-  try{ await setDoc(doc(fs,"config","main"), body); config=body; startDraft(); toast("Configuración guardada"); $("#cfg-msg").textContent="Guardado. Los precios nuevos valen para las ventas que se carguen de ahora en más."; }
+  try{ await setDoc(doc(fs,"config","main"), body); config=body; startDraft(); toast("Configuración guardada"); $("#cfg-msg").textContent="Guardado. Los precios y costos nuevos valen para las ventas que se carguen de ahora en más."; }
   catch(e){ writeErr(e); }
   $("#cfg-save").disabled=false; render();
 };
@@ -525,6 +537,8 @@ function render(){
   $("#venta-total").textContent = fmt(ventaTotal());
   const uds = itemsOf(state.cant).reduce((s,i)=>s+i.cant,0);
   $("#venta-uds").textContent = uds ? uds+" empanadas"+(enDocenas(uds)?" · "+enDocenas(uds):"") : "";
+  const itv = itemsOf(state.cant), gv = ventaTotal()-costoItems(itv), faltaCosto = itv.some(i=>!i.costo);
+  $("#venta-gan").innerHTML = itv.length ? `Ganancia: <b class="${gv>=0?"pos":"neg"}">${gv<0?"−":""}${fmt(Math.abs(gv))}</b>${faltaCosto?" · falta cargar costo":""}` : "";
   renderCats(); validate(); renderUltimos();
   if(state.tab==="resumen") renderResumen();
   if(state.tab==="movs") renderMovs();
